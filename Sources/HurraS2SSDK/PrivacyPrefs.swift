@@ -7,13 +7,16 @@
 
 import Foundation
 
-public class PrivacyPrefs: Codable {
+public class PrivacyPrefs: Codable, @unchecked Sendable {
     private var preferences: [String: Int] = [:]
-    
+    private var userPreferences: String? = nil
+    private var showConsentBanner: Bool = false
+    private var vendors: [String: Int] = [:]
+    private var externalVendors: [String: Int] = [:]
     public init() {}
     
     public func setAllCategories(_ accept: Bool) {
-        preferences["ac"] = accept ? 1 : 0
+        preferences["all"] = accept ? 1 : 0
     }
     
     public func setCategory(_ category: PrivacyCategory, accept: Bool) {
@@ -44,13 +47,54 @@ public class PrivacyPrefs: Codable {
         preferences["x_\(externalId)"] = accept ? 1 : 0
     }
     
-    public enum PrivacyCategory {
+    public enum PrivacyCategory: String, CaseIterable {
         case essential
         case analytics
         case functional
         case advertisement
         case personalization
+        
+        var categoryName: String {
+            switch self {
+            case .essential: return "ESSENTIAL"
+            case .analytics: return "ANALYTICS"
+            case .functional: return "FUNCTIONAL"
+            case .advertisement: return "ADVERTISEMENT"
+            case .personalization: return "PERSONALIZATION"
+            }
+        }
+        var categoryId: Int {
+            switch self {
+            case .essential: return 0
+            case .analytics: return 1
+            case .functional: return 2
+            case .advertisement: return 3
+            case .personalization: return 4
+            }
+        }
     }
+    
+    public func getPreferences() -> [String: Int] {
+        return preferences
+    }
+    
+    public func getUserPreferences() -> String? {
+        return userPreferences
+    }
+    
+    public func setUserPreferences(_ userPreferences: String?) {
+        self.userPreferences = userPreferences
+    }
+
+    public func getShowConsentBanner() -> Bool {
+        return showConsentBanner
+    }
+
+    public func _setShowConsentBanner(_ showConsentBanner: Bool) {
+        self.showConsentBanner = showConsentBanner
+    }
+
+
     
     // Codable conformance
     public func encode(to encoder: Encoder) throws {
@@ -62,4 +106,6 @@ public class PrivacyPrefs: Codable {
         let container = try decoder.singleValueContainer()
         preferences = try container.decode([String: Int].self)
     }
+
+    
 }

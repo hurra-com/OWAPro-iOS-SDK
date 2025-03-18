@@ -40,13 +40,13 @@ struct PrivacyPrefsTests {
         // Assert
         let encoded = try JSONEncoder().encode(prefs)
         let decoded = try JSONSerialization.jsonObject(with: encoded) as! [String: Int]
-        #expect(decoded["ac"] == 1)
+        #expect(decoded["all"] == 1)
         
         // Test false case
         prefs.setAllCategories(false)
         let encodedFalse = try JSONEncoder().encode(prefs)
         let decodedFalse = try JSONSerialization.jsonObject(with: encodedFalse) as! [String: Int]
-        #expect(decodedFalse["ac"] == 0)
+        #expect(decodedFalse["all"] == 0)
     }
     
     @Test func testSetCategory() throws {
@@ -152,7 +152,7 @@ struct PrivacyPrefsTests {
         let encoded = try JSONEncoder().encode(prefs)
         let decoded = try JSONSerialization.jsonObject(with: encoded) as! [String: Int]
         
-        #expect(decoded["ac"] == 1)
+        #expect(decoded["all"] == 1)
         #expect(decoded["c1"] == 0)
         #expect(decoded["vendor123"] == 1)
         #expect(decoded["v_test-vendor"] == 1)

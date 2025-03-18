@@ -63,6 +63,10 @@ public class HurraS2SSDK {
         self.privacyPrefs = prefs
     }
     
+    public func getPrivcyPrefs() -> PrivacyPrefs? {
+        return privacyPrefs
+    }
+    
     @MainActor
     public func trackView(
         eventData: [String: Any], 

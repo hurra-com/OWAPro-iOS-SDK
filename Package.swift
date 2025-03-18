@@ -20,7 +20,10 @@ let package = Package(
             name: "HurraS2SSDK"),
         .testTarget(
             name: "HurraS2SSDKTests",
-            dependencies: ["HurraS2SSDK"]
+            dependencies: ["HurraS2SSDK"],
+            resources: [
+                .copy("Resources/testCredentials.plist")
+            ]
         ),
     ]
 )
