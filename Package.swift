@@ -2,6 +2,7 @@
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
+import Foundation
 
 let package = Package(
     name: "HurraS2SSDK",
@@ -21,9 +22,9 @@ let package = Package(
         .testTarget(
             name: "HurraS2SSDKTests",
             dependencies: ["HurraS2SSDK"],
-            resources: [
+            resources: FileManager.default.fileExists(atPath: "Tests/HurraS2SSDKTests/Resources/testCredentials.plist") ? [
                 .copy("Resources/testCredentials.plist")
-            ]
+            ] : []
         ),
     ]
 )
