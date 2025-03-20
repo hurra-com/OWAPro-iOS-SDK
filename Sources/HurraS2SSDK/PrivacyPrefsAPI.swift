@@ -14,6 +14,7 @@ public final class PrivacyPrefsAPI: Codable, @unchecked Sendable {
     private let testing: Bool?
     private var api_available: Bool?
     private var apiNotAvailableReason: String?
+    private var showConsentDialog: Bool?
     public let privacyPrefs: PrivacyPrefs?
 
     @MainActor
@@ -141,11 +142,18 @@ public final class PrivacyPrefsAPI: Codable, @unchecked Sendable {
                 ) { [weak self] result in
                     switch result {
 
-                     case .success(_):
+                     case .success(let status):
                         self?.api_available = true
+                        if let userPreferences = status.userPreferences {
+                            self?.privacyPrefs?.setUserPreferences(userPreferences)
+                        }
+                        if status.showConsentBanner != nil {
+                            self?.showConsentDialog = status.showConsentBanner!
+                        }
                         continuation.resume(returning: true)
                     case .failure(let error):
                         self?.api_available = false
+                        self?.showConsentDialog = false
                         self?.apiNotAvailableReason = error.localizedDescription
                         continuation.resume(returning: false)
                     
@@ -179,6 +187,9 @@ public final class PrivacyPrefsAPI: Codable, @unchecked Sendable {
                        let self = self {
                         if let userPreferences = value.userPreferences {
                             self.privacyPrefs?.setUserPreferences(userPreferences)
+                        }
+                        if let showConsentDialog = value.showConsentBanner {
+                            self.showConsentDialog = showConsentDialog
                         }
                         // if let acceptedVendorIds = value.acceptedVendorIds {
                         //     for vendorId in acceptedVendorIds {
@@ -235,6 +246,9 @@ public final class PrivacyPrefsAPI: Codable, @unchecked Sendable {
                        let self = self {
                         if let userPreferences = value.userPreferences {
                             self.privacyPrefs?.setUserPreferences(userPreferences)
+                        }
+                        if let showConsentDialog = value.showConsentBanner {
+                            self.showConsentDialog = showConsentDialog
                         }
                         // if let acceptedVendorIds = value.acceptedVendorIds {
                         //     for vendorId in acceptedVendorIds {
