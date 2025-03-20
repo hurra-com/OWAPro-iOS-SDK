@@ -12,9 +12,16 @@ public class HurraS2SSDK {
     private var userId: String?
     private var privacyPrefs: PrivacyPrefs?
     private var previousView: String?
+//    private var privacyPrefsAPI: PrivacyPrefsAPI?
     private var testing: Bool?
     
-    public init(accountId: String, apiKey: String, useAdvertiserId: Bool = false, testing: Bool? = false, customUserId: String? = nil) {
+    public init(
+        accountId: String, 
+        apiKey: String, 
+        useAdvertiserId: Bool = false, 
+        testing: Bool? = false, 
+        customUserId: String? = nil
+    ) {
         self.accountId = accountId
         self.apiKey = apiKey
         self.useAdvertiserId = useAdvertiserId

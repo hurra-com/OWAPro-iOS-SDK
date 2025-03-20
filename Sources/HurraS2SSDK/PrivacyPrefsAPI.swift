@@ -7,23 +7,29 @@
 
 import Foundation
 
-public final class PrivacyPrefsAPI: Codable, Sendable {
+public final class PrivacyPrefsAPI: Codable, @unchecked Sendable {
     private let accountId: String
     private let apiKey: String
     private let userId: String
     private let testing: Bool?
+    private var api_available: Bool?
+    private var apiNotAvailableReason: String?
     public let privacyPrefs: PrivacyPrefs?
 
-    public init(accountId: String, apiKey: String, userId: String, testing: Bool? = false, privacyPrefs: PrivacyPrefs? = nil) {
+    @MainActor
+    public init(
+        accountId: String, 
+        apiKey: String, 
+        userId: String, 
+        testing: Bool? = false, 
+        privacyPrefs: PrivacyPrefs? = nil
+    ) async {
         self.accountId = accountId
         self.apiKey = apiKey
         self.userId = userId
         self.testing = testing
-        if privacyPrefs != nil {
-            self.privacyPrefs = privacyPrefs
-        } else {
-            self.privacyPrefs = PrivacyPrefs()
-        }
+        self.privacyPrefs = privacyPrefs ?? PrivacyPrefs()
+        _ = await self.prefetchConsentStatus()
     }
 
     public enum APIError: Error {
@@ -65,11 +71,6 @@ public final class PrivacyPrefsAPI: Codable, Sendable {
         
         var finalURL = url.appendingPathComponent(endpoint)
         
-        // if !queryParams.isEmpty {
-        //     var components = URLComponents(url: finalURL, resolvingAgainstBaseURL: true)
-        //     components?.queryItems = queryParams.map { URLQueryItem(name: $0.key, value: $0.value) }
-        //     finalURL = components?.url ?? finalURL
-        // }
         for (key, value) in queryParams {
             finalURL.append(queryItems: [URLQueryItem(name: key, value: value)])
         }
@@ -128,9 +129,43 @@ public final class PrivacyPrefsAPI: Codable, Sendable {
     }
     
     @MainActor
+    private func prefetchConsentStatus() async -> Bool {
+        return await withCheckedContinuation { continuation in
+            Task {
+                await self.sendRequest(
+                    method: "GET",
+                    endpoint: "consentStatus",
+                    queryParams: [:],
+                    body: [:],
+                    responseType: ConsentStatus.self
+                ) { [weak self] result in
+                    switch result {
+
+                     case .success(_):
+                        self?.api_available = true
+                        continuation.resume(returning: true)
+                    case .failure(let error):
+                        self?.api_available = false
+                        self?.apiNotAvailableReason = error.localizedDescription
+                        continuation.resume(returning: false)
+                    
+                    }
+                }
+            }
+        }
+    }
+    
+    @MainActor
     public func getConsentStatus(
         completion: (@Sendable (Result<ConsentStatus, APIError>) -> Void)? = nil
     ) async -> Result<ConsentStatus, APIError> {
+        // Check api_available first
+        guard api_available! else {
+            let error = APIError.apiError("API is not available: \(String(describing: apiNotAvailableReason))")
+            completion?(.failure(error))
+            return .failure(error)
+        }
+
         return await withCheckedContinuation { continuation in
             Task {
                 await self.sendRequest(
@@ -181,6 +216,12 @@ public final class PrivacyPrefsAPI: Codable, Sendable {
     public func setConsentStatus(
         completion: (@Sendable (Result<ConsentStatus, APIError>) -> Void)? = nil
     ) async -> Result<ConsentStatus, APIError> {
+        // Check api_available first
+        guard api_available! else {
+            let error = APIError.apiError("API is not available: \(String(describing: apiNotAvailableReason))")
+            completion?(.failure(error))
+            return .failure(error)
+        }
         return await withCheckedContinuation { continuation in
             Task {
                 await self.sendRequest(
@@ -231,6 +272,12 @@ public final class PrivacyPrefsAPI: Codable, Sendable {
     public func getVendorsDetails(
         completion: (@Sendable (Result<Vendors, APIError>) -> Void)? = nil
     ) async -> Result<Vendors, APIError> {
+        // Check api_available first
+        guard api_available! else {
+            let error = APIError.apiError("API is not available: \(String(describing: apiNotAvailableReason))")
+            completion?(.failure(error))
+            return .failure(error)
+        }
         return await withCheckedContinuation { continuation in
             Task {
                 await self.sendRequest(
@@ -258,6 +305,12 @@ public final class PrivacyPrefsAPI: Codable, Sendable {
         categoryName: String,
         completion: (@Sendable (Result<Vendors, APIError>) -> Void)? = nil
     ) async -> Result<Vendors, APIError> {
+        // Check api_available first
+        guard api_available! else {
+            let error = APIError.apiError("API is not available: \(String(describing: apiNotAvailableReason))")
+            completion?(.failure(error))
+            return .failure(error)
+        }
         return await withCheckedContinuation { continuation in
             Task {
                 await self.sendRequest(
@@ -285,6 +338,12 @@ public final class PrivacyPrefsAPI: Codable, Sendable {
         vendorId: String,
         completion: (@Sendable (Result<Vendor, APIError>) -> Void)? = nil
     ) async -> Result<Vendor, APIError> {
+        // Check api_available first
+        guard api_available! else {
+            let error = APIError.apiError("API is not available: \(String(describing: apiNotAvailableReason))")
+            completion?(.failure(error))
+            return .failure(error)
+        }
         return await withCheckedContinuation { continuation in  
             Task {
                 await self.sendRequest(
@@ -311,6 +370,12 @@ public final class PrivacyPrefsAPI: Codable, Sendable {
         externalVendorId: String,
         completion: (@Sendable (Result<Vendor, APIError>) -> Void)? = nil
     ) async -> Result<Vendor, APIError> {
+        // Check api_available first
+        guard api_available! else {
+            let error = APIError.apiError("API is not available: \(String(describing: apiNotAvailableReason))")
+            completion?(.failure(error))
+            return .failure(error)
+        }
         return await withCheckedContinuation { continuation in  
             Task {
                 await self.sendRequest(
@@ -336,6 +401,12 @@ public final class PrivacyPrefsAPI: Codable, Sendable {
     public func getCategories(
         completion: (@Sendable (Result<Categories, APIError>) -> Void)? = nil
     ) async -> Result<Categories, APIError> {
+        // Check api_available first
+        guard api_available! else {
+            let error = APIError.apiError("API is not available: \(String(describing: apiNotAvailableReason))")
+            completion?(.failure(error))
+            return .failure(error)
+        }
         return await withCheckedContinuation { continuation in
             Task {  
                 await self.sendRequest(
@@ -363,6 +434,12 @@ public final class PrivacyPrefsAPI: Codable, Sendable {
         fields: [String]? = nil,
         completion: (@Sendable (Result<Translations, APIError>) -> Void)? = nil
     ) async -> Result<Translations, APIError> {
+        // Check api_available first
+        guard api_available! else {
+            let error = APIError.apiError("API is not available: \(String(describing: apiNotAvailableReason))")
+            completion?(.failure(error))
+            return .failure(error)
+        }
         return await withCheckedContinuation { continuation in
             Task {
                 let queryParams: [String: String] = ["fields": fields?.joined(separator: ",") ?? ""]
@@ -864,3 +941,21 @@ extension Translations {
         }
     }
 }
+
+// // Thread-safe boolean wrapper
+// private class AtomicBool: @unchecked Sendable{
+//     private var value: Bool = false
+//     private let lock = NSLock()
+    
+//     func set(_ newValue: Bool) {
+//         lock.lock()
+//         value = newValue
+//         lock.unlock()
+//     }
+    
+//     func get() -> Bool {
+//         lock.lock()
+//         defer { lock.unlock() }
+//         return value
+//     }
+// }

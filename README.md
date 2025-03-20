@@ -6,6 +6,10 @@ A Swift package for iOS applications that enables server-to-server (S2S) trackin
 
 HurraS2SSDK provides a simple interface for sending event data to Hurra's analytics backend while respecting user privacy preferences. It supports tracking page views, user interactions, and custom events with minimal setup.
 
+## Documentation
+
+- [Privacy Preferences API Documentation](PrivacyPrefsAPI.md) - Detailed documentation for managing user privacy preferences and consent settings
+
 ## Installation
 
 ### Swift Package Manager

@@ -68,12 +68,15 @@ struct PrivacyPrefsAPITests {
         }
         
         let state = PPATestState()
-        let api = PrivacyPrefsAPI(
+        let api = await PrivacyPrefsAPI(
             accountId: accountId,
             apiKey: apiKey,
             userId: testUserId,
             testing: true
         )
+//        print("initialized ")
+//        dump(api)
+        
 
         let c1 = await api.getConsentStatus() { result in
         Task { await state.setResponseReceived() }
@@ -147,7 +150,7 @@ struct PrivacyPrefsAPITests {
            return
        }
        let state = PPATestState()
-       let api = PrivacyPrefsAPI(
+       let api = await PrivacyPrefsAPI(
            accountId: accountId,
            apiKey: apiKey,
            userId: testUserId,
@@ -194,7 +197,7 @@ struct PrivacyPrefsAPITests {
            print("Skipping test \(#function): testApiKey not found in testCredentials.plist")
            return
        }
-       let api = PrivacyPrefsAPI(
+       let api = await PrivacyPrefsAPI(
            accountId: accountId,
            apiKey: apiKey,
            userId: testUserId,
@@ -245,7 +248,8 @@ struct PrivacyPrefsAPITests {
        try await Task.sleep(for: .seconds(1))
 
    }
-
+   
+    @MainActor
    @Test func testGetCategories() async throws {
        guard let accountId = testAccountId else {
            print("Skipping test \(#function): testAccountId not found in testCredentials.plist")
@@ -255,7 +259,7 @@ struct PrivacyPrefsAPITests {
            print("Skipping test \(#function): testApiKey not found in testCredentials.plist")
            return
        }
-       let api = PrivacyPrefsAPI(
+       let api = await PrivacyPrefsAPI(
            accountId: accountId,
            apiKey: apiKey,
            userId: testUserId,
@@ -289,6 +293,7 @@ struct PrivacyPrefsAPITests {
        try await Task.sleep(for: .seconds(1))
    }
 
+    @MainActor
     @Test func testGetTranslations() async throws {
        guard let accountId = testAccountId else {
            print("Skipping test \(#function): testAccountId not found in testCredentials.plist")
@@ -298,7 +303,7 @@ struct PrivacyPrefsAPITests {
            print("Skipping test \(#function): testApiKey not found in testCredentials.plist")
            return
        }
-       let api = PrivacyPrefsAPI(
+       let api = await PrivacyPrefsAPI(
            accountId: accountId,
            apiKey: apiKey,
            userId: testUserId,

@@ -4,6 +4,7 @@
 import PackageDescription
 import Foundation
 
+
 let package = Package(
     name: "HurraS2SSDK",
     platforms: [.iOS(.v16)],
@@ -22,9 +23,10 @@ let package = Package(
         .testTarget(
             name: "HurraS2SSDKTests",
             dependencies: ["HurraS2SSDK"],
-            resources: FileManager.default.fileExists(atPath: "Tests/HurraS2SSDKTests/Resources/testCredentials.plist") ? [
-                .copy("Resources/testCredentials.plist")
-            ] : []
+            
+            resources: [
+                .process("Resources")
+            ]
         ),
     ]
 )
