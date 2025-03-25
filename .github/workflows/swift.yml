@@ -11,7 +11,6 @@ on:
 
 jobs:
   build:
-
     runs-on: macos-latest
 
     steps:
@@ -19,7 +18,21 @@ jobs:
     - uses: swift-actions/setup-swift@v2
       with:
         swift-version: "6.0.0"
-    - name: Build
-      run: swift build -v
-    - name: Run tests
-      run: swift test -v
+
+    # Build for macOS
+    #- name: Build Package
+    #  run: swift build -v
+
+    # Run tests on macOS
+    #- name: Run tests
+    #  run: swift test -v
+
+    # Build for iOS
+    - name: Build for iOS
+      run: |
+        xcodebuild build -scheme HurraS2SSDK -destination "platform=iOS Simulator,name=iPhone 14,OS=latest" -sdk iphonesimulator
+
+    # Test on iOS simulator
+    - name: Test on iOS
+      run: |
+        xcodebuild test -scheme HurraS2SSDK -destination "platform=iOS Simulator,name=iPhone 14,OS=latest" -sdk iphonesimulator
