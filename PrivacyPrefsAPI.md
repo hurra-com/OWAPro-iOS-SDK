@@ -63,7 +63,7 @@ Retrieve details for a specific vendor:
 let result = await api.getVendorDetails(vendorId: "vendor_id")
 
 // Using external vendor ID
-let result = await api.getVendorDetails(externalVendorId: "ga")
+let result = await api.getExternalVendorDetails(externalVendorId: "ga")
 ```
 
 ### Get All Vendors

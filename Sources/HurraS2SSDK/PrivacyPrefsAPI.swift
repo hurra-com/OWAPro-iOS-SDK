@@ -380,30 +380,30 @@ public final class PrivacyPrefsAPI: Codable, @unchecked Sendable {
     }
 
     @MainActor
-    public func getVendorDetails(
+    public func getExternlVendorDetails(
         externalVendorId: String,
-        completion: (@Sendable (Result<Vendor, APIError>) -> Void)? = nil
-    ) async -> Result<Vendor, APIError> {
+        completion: (@Sendable (Result<ExternalVendor, APIError>) -> Void)? = nil
+    ) async -> Result<ExternalVendor, APIError> {
         // Check api_available first
         guard api_available! else {
             let error = APIError.apiError("API is not available: \(String(describing: apiNotAvailableReason))")
             completion?(.failure(error))
             return .failure(error)
         }
-        return await withCheckedContinuation { continuation in  
+        return await withCheckedContinuation { continuation in
             Task {
                 await self.sendRequest(
-                    method: "GET", 
-                    endpoint: "vendor/externalVendorId/\(externalVendorId)", 
-                    queryParams: [:], 
+                    method: "GET",
+                    endpoint: "vendor/externalVendorId/\(externalVendorId)",
+                    queryParams: [:],
                     body: [:],
-                    responseType: Vendor.self
+                    responseType: ExternalVendor.self
                 ) { result in
                     completion?(result)
                     switch result {
                     case .success(let value):
                         continuation.resume(returning: .success(value))
-                    case .failure(let error):   
+                    case .failure(let error):
                         continuation.resume(returning: .failure(error))
                     }
                 }
@@ -527,10 +527,39 @@ public struct Vendor: Codable, Sendable {
     }
 }
 
+public struct ExternalVendor: Codable, Sendable {
+    public let name: [String]?
+    public let vendorId: [String]?
+    public let externalVendorId: String?
+    public let categoryName: [String]?
+    public let legalBasis: [String]?
+    public let defaultStatus: [Int]?
+
+    enum CodingKeys: String, CodingKey {
+        case name
+        case vendorId
+        case externalVendorId
+        case categoryName
+        case legalBasis
+        case defaultStatus
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        name = try container.decode([String].self, forKey: .name)
+        vendorId = try container.decode([String].self, forKey: .vendorId)
+        externalVendorId = try container.decodeIfPresent(String.self, forKey: .externalVendorId)
+        categoryName = try container.decode([String].self, forKey: .categoryName)
+        legalBasis = try container.decode([String].self, forKey: .legalBasis)
+        defaultStatus = try container.decode([Int].self, forKey: .defaultStatus)
+    }
+}
+
 
 public struct Vendors: Codable, Sendable {
     public private(set) var items: [Vendor]
-    
+
     public init(items: [Vendor] = []) {
         self.items = items
     }

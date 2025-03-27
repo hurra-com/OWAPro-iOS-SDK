@@ -120,7 +120,7 @@ public class HurraS2SSDK {
         payload["user_id"] = userId
         var _currentView: String = currentView
         // debug
-        let urlRegex = /[a-z]+:\/\/[a-z0-9.-]+\/.+/.ignoresCase()
+        let urlRegex = try! Regex("[a-z]+://[a-z0-9.-]+/.+/").ignoresCase()
 
         if (try? urlRegex.prefixMatch(in: _currentView)) != nil {
             // it's an uri alerady

@@ -28,6 +28,7 @@ struct TestCredentials: Sendable {
     let accountId: String?
     let apiKey: String?
     let vendorId: String?
+    let externalVendorId: String?
 }
 
 private final class TestBundleLocator {}
@@ -41,10 +42,11 @@ private func configureTestCredentials() -> TestCredentials {
         return TestCredentials(
             accountId: dict["testAccountId"] as? String,
             apiKey: dict["testAPIKey"] as? String,
-            vendorId: dict["testVendorId"] as? String
+            vendorId: dict["testVendorId"] as? String,
+            externalVendorId: dict["testExternalVendorId"] as? String
         )
     }
-    return TestCredentials(accountId: nil, apiKey: nil, vendorId: nil)
+    return TestCredentials(accountId: nil, apiKey: nil, vendorId: nil, externalVendorId: nil)
 }
 
 let testCredentials = configureTestCredentials()
@@ -52,6 +54,7 @@ let testCredentials = configureTestCredentials()
 let testAccountId = testCredentials.accountId
 let testApiKey = testCredentials.apiKey
 let testVendorId = testCredentials.vendorId
+let testExternalVendorId = testCredentials.externalVendorId
 let testUserId = UUID().uuidString // Generate a random UUID for each test run
 
 struct PrivacyPrefsAPITests {
@@ -170,22 +173,44 @@ struct PrivacyPrefsAPITests {
            }
        }
        try await Task.sleep(for: .seconds(1))
-       
-       _ = await api.getVendorDetails(externalVendorId: "ga") { result in
-           Task { await state.setResponseReceived() }
-           switch result {
-           case .success(let status):
-//                print("Vendor details:")
-//                dump(status)
-               #expect(status.vendorId == "302")
-               #expect(status.externalVendorId == "ga")
-           case .failure(let error):
-            //    print("Error: \(error)")
-               #expect(Bool(false), "API call failed: \(error)")
-           }
-       }
-       try await Task.sleep(for: .seconds(1))
    }
+
+    @MainActor
+    @Test func testExternalVendorDetails() async throws {
+        guard let accountId = testAccountId else {
+            print("Skipping test \(#function): testAccountId not found in testCredentials.plist")
+            return
+        }
+        guard let apiKey = testApiKey else {
+            print("Skipping test \(#function): testApiKey not found in testCredentials.plist")
+            return
+        }
+        guard let externalVendorId = testExternalVendorId else {
+            print("Skipping test \(#function): testExternalVendorId not found in testCredentials.plist")
+            return
+        }
+        let state = PPATestState()
+        let api = await PrivacyPrefsAPI(
+            accountId: accountId,
+            apiKey: apiKey,
+            userId: testUserId,
+            testing: true
+        )
+
+        _ = await api.getExternlVendorDetails(externalVendorId: externalVendorId) { result in
+            Task { await state.setResponseReceived() }
+            switch result {
+            case .success(let status):
+ //                print("Vendor details:")
+ //                dump(status)
+                #expect(status.externalVendorId == externalVendorId)
+            case .failure(let error):
+             //    print("Error: \(error)")
+                #expect(Bool(false), "API call failed: \(error)")
+            }
+        }
+        try await Task.sleep(for: .seconds(1))
+    }
    
    @MainActor
    @Test func testGetVendorsDetails() async throws {
