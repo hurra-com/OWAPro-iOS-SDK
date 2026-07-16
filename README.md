@@ -138,6 +138,62 @@ Task {
 }
 ```
 
+### Tracking Page Views from Deep Links
+
+When your app is opened via a registered URL (a custom URL scheme or a universal link), track a page view and copy every query string parameter from the incoming URL onto `currentView`'s query string, so attribution data (campaign, referral, etc.) carried by the deep link is preserved in the event:
+
+```swift
+import HurraS2SSDK
+
+class AppDelegate: NSObject, UIApplicationDelegate {
+    @MainActor let hurraSDK = HurraS2SSDK(
+        accountId: "your_account_id",
+        apiKey: "your_api_key"
+    )
+
+    func application(
+        _ app: UIApplication,
+        open url: URL,
+        options: [UIApplication.OpenURLOptionsKey: Any] = [:]
+    ) -> Bool {
+        Task {
+            await trackDeepLinkPageView(from: url)
+        }
+        return true
+    }
+
+    @MainActor
+    func trackDeepLinkPageView(from url: URL) async {
+        // The view associated with the deep link's path, e.g. "product_detail".
+        var components = URLComponents()
+        components.scheme = "https"
+        components.host = "example.com"
+        components.path = url.path
+
+        // Copy all query string parameters from the opening URL onto currentView.
+        components.queryItems = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems
+
+        let currentView = components.url?.absoluteString ?? url.absoluteString
+
+        await hurraSDK.trackView(
+            eventData: ["page_type": "deep_link"],
+            currentView: currentView
+        )
+    }
+}
+```
+
+The same pattern works with SwiftUI's `.onOpenURL`:
+
+```swift
+ContentView()
+    .onOpenURL { url in
+        Task {
+            await hurraSDK.trackDeepLinkPageView(from: url)
+        }
+    }
+```
+
 ### Managing Privacy Preferences
 
 ```swift
