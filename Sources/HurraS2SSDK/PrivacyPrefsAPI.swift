@@ -16,15 +16,23 @@ public final class PrivacyPrefsAPI: Codable, @unchecked Sendable {
     private var apiNotAvailableReason: String?
     private var showConsentDialog: Bool?
     public let privacyPrefs: PrivacyPrefs?
+    // Optional so that data encoded before this property existed can still be decoded.
+    private let baseURL: URL?
 
+    /// - Parameter baseURL: Base URL that consent API requests are sent to, e.g. your own domain with a
+    ///   reverse proxy to the Hurra S2S server (`https://www.example.com/hc_s2s`). Must use https.
+    ///   A trailing slash is optional. Defaults to `HurraS2SSDK.defaultBaseURL`.
     @MainActor
     public init(
         accountId: String, 
         apiKey: String, 
         userId: String, 
         testing: Bool? = false, 
-        privacyPrefs: PrivacyPrefs? = nil
+        privacyPrefs: PrivacyPrefs? = nil,
+        baseURL: URL = HurraS2SSDK.defaultBaseURL
     ) async {
+        precondition(BaseURL.isValid(baseURL), BaseURL.preconditionMessage)
+        self.baseURL = baseURL
         self.accountId = accountId
         self.apiKey = apiKey
         self.userId = userId
@@ -65,15 +73,15 @@ public final class PrivacyPrefsAPI: Codable, @unchecked Sendable {
         responseType: T.Type,
         completion: (@Sendable (Result<T, APIError>) -> Void)? = nil
     ) async where T: Decodable {
-        guard let url = URL(string: "https://s2s.hurra.com/consent-api/\(accountId)/?app=1&user_id=\(userId)") else {
+        guard let finalURL = PrivacyPrefsAPI.consentURL(
+            baseURL: baseURL ?? HurraS2SSDK.defaultBaseURL,
+            accountId: accountId,
+            userId: userId,
+            endpoint: endpoint,
+            queryParams: queryParams
+        ) else {
             completion?(.failure(.invalidURL))
             return
-        }
-        
-        var finalURL = url.appendingPathComponent(endpoint)
-        
-        for (key, value) in queryParams {
-            finalURL.append(queryItems: [URLQueryItem(name: key, value: value)])
         }
 
         var request = URLRequest(url: finalURL)
@@ -128,7 +136,27 @@ public final class PrivacyPrefsAPI: Codable, @unchecked Sendable {
         }
         task.resume()
     }
-    
+
+    /// URL of a consent API endpoint for the given base URL.
+    static func consentURL(
+        baseURL: URL,
+        accountId: String,
+        userId: String,
+        endpoint: String,
+        queryParams: [String: String]
+    ) -> URL? {
+        guard let url = URL(string: "\(BaseURL.normalizedString(baseURL))/consent-api/\(accountId)/?app=1&user_id=\(userId)") else {
+            return nil
+        }
+
+        var finalURL = url.appendingPathComponent(endpoint)
+
+        for (key, value) in queryParams {
+            finalURL.append(queryItems: [URLQueryItem(name: key, value: value)])
+        }
+        return finalURL
+    }
+
     @MainActor
     private func prefetchConsentStatus() async -> Bool {
         return await withCheckedContinuation { continuation in

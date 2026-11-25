@@ -6,7 +6,11 @@ import AdSupport
 import AppTrackingTransparency
 
 public class HurraS2SSDK {
+    /// Default base URL of the Hurra S2S server.
+    public static let defaultBaseURL = URL(string: "https://s2s.hurra.com")!
+
     private let accountId: String
+    private let baseURL: URL
     private let apiKey: String
     private let useAdvertiserId: Bool
     private var userId: String?
@@ -15,13 +19,19 @@ public class HurraS2SSDK {
 //    private var privacyPrefsAPI: PrivacyPrefsAPI?
     private var testing: Bool?
     
+    /// - Parameter baseURL: Base URL that tracking requests are sent to, e.g. your own domain with a
+    ///   reverse proxy to the Hurra S2S server (`https://www.example.com/hc_s2s`). Must use https.
+    ///   A trailing slash is optional. Defaults to `HurraS2SSDK.defaultBaseURL`.
     public init(
         accountId: String, 
         apiKey: String, 
         useAdvertiserId: Bool = false, 
         testing: Bool? = false, 
-        customUserId: String? = nil
+        customUserId: String? = nil,
+        baseURL: URL = HurraS2SSDK.defaultBaseURL
     ) {
+        precondition(BaseURL.isValid(baseURL), BaseURL.preconditionMessage)
+        self.baseURL = baseURL
         self.accountId = accountId
         self.apiKey = apiKey
         self.useAdvertiserId = useAdvertiserId
@@ -162,7 +172,7 @@ public class HurraS2SSDK {
         payload: [String: Any],
         completion: (@Sendable (Result<ServerResponse, Error>) -> Void)? = nil
     ) async {
-        guard let url = URL(string: "https://s2s.hurra.com/rt?cid=\(accountId)&app=1") else {
+        guard let url = HurraS2SSDK.trackingURL(baseURL: baseURL, accountId: accountId) else {
             if completion != nil {
                 completion!(.failure(S2SError.invalidURL))
             }
@@ -214,6 +224,11 @@ public class HurraS2SSDK {
                 }
             }
         }.resume()
+    }
+
+    /// URL of the tracking endpoint for the given base URL.
+    static func trackingURL(baseURL: URL, accountId: String) -> URL? {
+        return URL(string: "\(BaseURL.normalizedString(baseURL))/rt?cid=\(accountId)&app=1")
     }
 }
 
