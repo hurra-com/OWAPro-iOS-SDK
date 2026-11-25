@@ -53,6 +53,67 @@ let hurraSDK = HurraS2SSDK(
     apiKey: "your_api_key",
     customUserId: nil       // Provide a custom user ID if needed
 )
+
+// Or send requests through your own domain (see below)
+let hurraSDK = HurraS2SSDK(
+    accountId: "your_account_id",
+    apiKey: "your_api_key",
+    baseURL: URL(string: "https://www.example.com/hc_s2s")!
+)
+```
+
+### Sending requests through your own domain
+
+By default the SDK sends its requests to `https://s2s.hurra.com`. You can send them through your own domain instead, with a reverse proxy that forwards them to `https://s2s.hurra.com/`. The app then talks to your domain, not to a third-party tracking domain.
+
+Pass the same `baseURL` to `HurraS2SSDK` and to `PrivacyPrefsAPI`:
+
+```swift
+let baseURL = URL(string: "https://www.example.com/hc_s2s")!
+
+let hurraSDK = HurraS2SSDK(
+    accountId: "your_account_id",
+    apiKey: "your_api_key",
+    baseURL: baseURL
+)
+
+let api = await PrivacyPrefsAPI(
+    accountId: "your_account_id",
+    apiKey: "your_api_key",
+    userId: hurraSDK.getUserId() ?? "",
+    baseURL: baseURL
+)
+```
+
+- `baseURL` must be an `https` URL with a host and without query or fragment; the SDK stops with a precondition failure otherwise. A trailing slash is optional.
+- Default: `HurraS2SSDK.defaultBaseURL` (`https://s2s.hurra.com`).
+
+The proxy must forward these paths below the base URL to `https://s2s.hurra.com/`, with method, query string, headers and body unchanged:
+
+| Path | Used by |
+|------|---------|
+| `/rt` | event and view tracking (`HurraS2SSDK`) |
+| `/consent-api/…` | consent API (`PrivacyPrefsAPI`) |
+
+and add these headers:
+
+| Header | Value |
+|--------|-------|
+| `X-Hurra-Client-IP` | IP address of the app user (the client that connected to the proxy) |
+| `X-Hurra-Proxy-Domain` | your domain, e.g. `www.example.com` |
+| `X-Hurra-Proxy-Path` | the path of the base URL, e.g. `/hc_s2s` |
+
+Example for nginx, for the base URL `https://www.example.com/hc_s2s`:
+
+```nginx
+location /hc_s2s/ {
+    proxy_pass https://s2s.hurra.com/;
+    proxy_set_header X-Hurra-Client-IP $remote_addr;
+    proxy_set_header X-Hurra-Proxy-Domain $host;
+    proxy_set_header X-Hurra-Proxy-Path "/hc_s2s";
+    proxy_set_header X-Forwarded-For $remote_addr;
+    proxy_connect_timeout 10s;
+}
 ```
 
 ### Storing API Credentials
