@@ -11,6 +11,14 @@ let api = await PrivacyPrefsAPI(
     userId: "user_identifier",
     testing: false // Set to true for development environment
 )
+
+// Or send requests through your own domain (see "Sending requests through your own domain" in README.md)
+let api = await PrivacyPrefsAPI(
+    accountId: "your_account_id",
+    apiKey: "your_api_key",
+    userId: "user_identifier",
+    baseURL: URL(string: "https://www.example.com/hc_s2s")!
+)
 ```
 
 ## API Availability
