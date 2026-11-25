@@ -18,20 +18,35 @@ public class HurraS2SSDK {
     private var previousView: String?
 //    private var privacyPrefsAPI: PrivacyPrefsAPI?
     private var testing: Bool?
+    /// Effective value: always `true` for the default domain `s2s.hurra.com`.
+    let requiresTrackingAuthorization: Bool
+    /// Source of the App Tracking Transparency status. Replaceable in tests.
+    var trackingAuthorizationStatus: () -> ATTrackingManager.AuthorizationStatus = {
+        ATTrackingManager.trackingAuthorizationStatus
+    }
     
     /// - Parameter baseURL: Base URL that tracking requests are sent to, e.g. your own domain with a
     ///   reverse proxy to the Hurra S2S server (`https://www.example.com/hc_s2s`). Must use https.
     ///   A trailing slash is optional. Defaults to `HurraS2SSDK.defaultBaseURL`.
+    /// - Parameter requiresTrackingAuthorization: Whether events are sent only when the user has granted
+    ///   App Tracking Transparency permission (`.authorized`). Always `true` for the default domain
+    ///   `s2s.hurra.com`, whatever is passed. For your own domain, pass `false` if your measurement isn't
+    ///   tracking in Apple's sense. The SDK never shows the ATT prompt; the app does.
     public init(
         accountId: String, 
         apiKey: String, 
         useAdvertiserId: Bool = false, 
         testing: Bool? = false, 
         customUserId: String? = nil,
-        baseURL: URL = HurraS2SSDK.defaultBaseURL
+        baseURL: URL = HurraS2SSDK.defaultBaseURL,
+        requiresTrackingAuthorization: Bool = true
     ) {
         precondition(BaseURL.isValid(baseURL), BaseURL.preconditionMessage)
         self.baseURL = baseURL
+        self.requiresTrackingAuthorization = HurraS2SSDK.effectiveRequiresTrackingAuthorization(
+            baseURL: baseURL,
+            requested: requiresTrackingAuthorization
+        )
         self.accountId = accountId
         self.apiKey = apiKey
         self.useAdvertiserId = useAdvertiserId
@@ -115,6 +130,15 @@ public class HurraS2SSDK {
         isInteractive: Bool? = nil, 
         completion: (@Sendable (Result<ServerResponse, Error>) -> Void)? = nil
     ) async {
+        // Checked before anything else, so that an event that isn't sent doesn't change
+        // `previousView`: the next sent event's referer is then a view the server has seen.
+        guard isTrackingAllowed() else {
+            if completion != nil {
+                completion!(.failure(S2SError.trackingNotAuthorized))
+            }
+            return
+        }
+
         guard let userId = userId else {
             if completion != nil {
                 completion!(.failure(S2SError.userIdNotSet))
@@ -226,6 +250,19 @@ public class HurraS2SSDK {
         }.resume()
     }
 
+    /// `false` if App Tracking Transparency permission is required and not granted.
+    func isTrackingAllowed() -> Bool {
+        return !requiresTrackingAuthorization || trackingAuthorizationStatus() == .authorized
+    }
+
+    /// Requests to the default domain always require ATT permission; for other domains the passed value applies.
+    static func effectiveRequiresTrackingAuthorization(baseURL: URL, requested: Bool) -> Bool {
+        if baseURL.host?.lowercased() == defaultBaseURL.host?.lowercased() {
+            return true
+        }
+        return requested
+    }
+
     /// URL of the tracking endpoint for the given base URL.
     static func trackingURL(baseURL: URL, accountId: String) -> URL? {
         return URL(string: "\(BaseURL.normalizedString(baseURL))/rt?cid=\(accountId)&app=1")
@@ -242,4 +279,6 @@ public enum S2SError: Error {
     case userIdNotSet
     case invalidURL
     case noData
+    /// App Tracking Transparency permission is required (see `requiresTrackingAuthorization`) and the user hasn't granted it.
+    case trackingNotAuthorized
 }

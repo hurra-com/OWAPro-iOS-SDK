@@ -359,5 +359,47 @@ The SDK is designed to be thread-safe with `@MainActor` annotations on its publi
 - IDFA (Advertiser ID) usage is optional and requires user permission
 - All data is sent securely over HTTPS
 
+## App Tracking Transparency
+
+### Rule
+
+- Requests to the default domain `s2s.hurra.com` are sent only when the user has granted App Tracking Transparency (ATT) permission (`ATTrackingManager.trackingAuthorizationStatus == .authorized`). This can't be switched off.
+- Requests to your own domain (`baseURL`, see "Sending requests through your own domain"): you decide with `requiresTrackingAuthorization` (default `true`).
+- Without the required permission, `sendEvent`, `trackEvent` and `trackView` don't send anything and call the completion with `S2SError.trackingNotAuthorized`. An event that isn't sent doesn't become the `referer` of the next event.
+- `PrivacyPrefsAPI` (consent API) doesn't check ATT: it is needed to show the consent screen.
+- Consent outside the OS (`PrivacyPrefs`, categories c0–c4) is unchanged and stays your responsibility.
+
+```swift
+// Your own domain, measurement that isn't tracking in Apple's sense
+let hurraSDK = HurraS2SSDK(
+    accountId: "your_account_id",
+    apiKey: "your_api_key",
+    baseURL: URL(string: "https://www.example.com/hc_s2s")!,
+    requiresTrackingAuthorization: false
+)
+```
+
+### The prompt is shown by the app
+
+The SDK never shows the ATT prompt; it only checks the status. If ATT permission is required, the app asks for it with `ATTrackingManager.requestTrackingAuthorization` and needs its own `NSUserTrackingUsageDescription` in `Info.plist`.
+
+### Privacy manifest
+
+The SDK's `PrivacyInfo.xcprivacy` declares the minimum: `NSPrivacyTracking = false`, no tracking domains, and the collected data types (Device ID, User ID, Product Interaction) as linked to the user but not used for tracking. The app can't remove what an SDK declares, so this leaves the decision to you.
+
+If you consider your measurement tracking in Apple's sense (linking data from your app with data from other companies' apps, websites or offline sources for targeted advertising or advertising measurement), the app:
+
+- declares `NSPrivacyTracking = true` and the data types with `NSPrivacyCollectedDataTypeTracking = true` in its **own** privacy manifest,
+- asks for ATT permission and keeps `requiresTrackingAuthorization = true`.
+
+Whether it is tracking is your (legal) decision.
+
+> [!WARNING]
+> Never list your own proxy domain in `NSPrivacyTrackingDomains`. iOS blocks all requests to the domains listed there while ATT permission isn't granted, including the app's own API if it uses the same domain.
+
+### IDFA
+
+With `useAdvertiserId: true`, the IDFA is all zeros without ATT permission. This is how iOS behaves; the SDK doesn't change it.
+
 ## License
 

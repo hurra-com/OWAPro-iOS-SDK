@@ -209,6 +209,7 @@ struct HurraS2SSDKTests {
     @Test func testSetPrivacyPrefs() async throws {
         // Arrange
         let framework = HurraS2SSDK(accountId: "test-account", apiKey: "test-key", useAdvertiserId: false, testing: true)
+        framework.trackingAuthorizationStatus = { .authorized } // these tests send events to the server
         let prefs = PrivacyPrefs()
         prefs.setAllCategories(true)
         let testState = TestState()
@@ -238,6 +239,7 @@ struct HurraS2SSDKTests {
     @Test func testSendEvent() async throws {
         // Arrange
         let framework = HurraS2SSDK(accountId: "test-account", apiKey: "test-key", useAdvertiserId: false, testing: true)
+        framework.trackingAuthorizationStatus = { .authorized } // these tests send events to the server
         let eventData = ["action": "test_action", "value": "test_value"]
         let currentView = "https://example.com/test"
         let testState = TestState()
@@ -265,6 +267,7 @@ struct HurraS2SSDKTests {
     @Test func testSendEventWithPreviousView() async throws {
         // Arrange
         let framework = HurraS2SSDK(accountId: "test-account", apiKey: "test-key", useAdvertiserId: false, testing: false)
+        framework.trackingAuthorizationStatus = { .authorized } // these tests send events to the server
         let firstView = "https://example.com/first"
         let secondView = "https://example.com/second"
         let testState = TestState()
@@ -309,6 +312,7 @@ struct HurraS2SSDKTests {
     @Test func testSendEventWithoutCompletion() async throws {
         // Arrange
         let framework = HurraS2SSDK(accountId: "test-account", apiKey: "test-key", useAdvertiserId: false, testing: true)
+        framework.trackingAuthorizationStatus = { .authorized } // these tests send events to the server
         let eventData = ["action": "test_action", "value": "test_value"]
         let currentView = "https://example.com/test"
         
@@ -330,6 +334,7 @@ struct HurraS2SSDKTests {
     @Test func testSendEventWithCompletion() async throws {
         // Arrange
         let framework = HurraS2SSDK(accountId: "test-account", apiKey: "test-key", useAdvertiserId: false, testing: true)
+        framework.trackingAuthorizationStatus = { .authorized } // these tests send events to the server
         let eventData = ["action": "test_action", "value": "test_value"]
         let currentView = "https://example.com/test"
         let testState = TestState()
