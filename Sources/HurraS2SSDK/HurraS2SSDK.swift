@@ -55,25 +55,36 @@ public class HurraS2SSDK {
         if customUserId != nil && customUserId!.count > 0 {
             userId = customUserId
         } else if !useAdvertiserId {
-            generateUserId()
+            loadOrGenerateUserId()
         } else {
             setUserIdFromAdvertisingIdentifier()
         }
     }
-    
+
+    private static let userIdDefaultsKey = "S2SFramework_UserId"
+
+    /// Reuses the user ID generated on a previous app start, if any, so it stays stable across launches.
+    private func loadOrGenerateUserId() {
+        if let storedUserId = UserDefaults.standard.string(forKey: HurraS2SSDK.userIdDefaultsKey), !storedUserId.isEmpty {
+            userId = storedUserId
+        } else {
+            generateUserId()
+        }
+    }
+
     private func generateUserId() {
         userId = "\(Date().timeIntervalSince1970)-\(UUID().uuidString)"
         storeUserId()
     }
-    
+
     private func setUserIdFromAdvertisingIdentifier() {
         userId =  ASIdentifierManager.shared().advertisingIdentifier.uuidString
     }
-    
+
     private func storeUserId() {
         // Store userId in UserDefaults for demonstration
         // In production, use more secure storage method
-        UserDefaults.standard.set(userId, forKey: "S2SFramework_UserId")
+        UserDefaults.standard.set(userId, forKey: HurraS2SSDK.userIdDefaultsKey)
     }
     
     public func setUserId(_ userId: String) {
@@ -153,8 +164,9 @@ public class HurraS2SSDK {
         payload["event_ts"] = Int(Date().timeIntervalSince1970 * 1000)
         payload["user_id"] = userId
         var _currentView: String = currentView
-        // debug
-        let urlRegex = try! Regex("[a-z]+://[a-z0-9.-]+/.+/").ignoresCase()
+        // Matches an absolute URL with an optional path, e.g. "https://example.com" or
+        // "https://example.com/home" (a single path segment, no trailing slash required).
+        let urlRegex = try! Regex("[a-z]+://[a-z0-9.-]+(/.*)?").ignoresCase()
 
         if (try? urlRegex.prefixMatch(in: _currentView)) != nil {
             // it's an uri alerady

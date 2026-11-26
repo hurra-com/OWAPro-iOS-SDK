@@ -18,13 +18,13 @@ Add the package to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/yourusername/HurraS2SSDK.git", from: "1.1.1")
+    .package(url: "https://github.com/hurra-com/OWAPro-iOS-SDK.git", from: "1.1.2")
 ]
 ```
 
 Or add it directly in Xcode:
 1. File > Add Packages...
-2. Enter the repository URL: `https://github.com/yourusername/HurraS2SSDK.git`
+2. Enter the repository URL: `https://github.com/hurra-com/OWAPro-iOS-SDK.git`
 3. Select the version you want to use
 
 ## Configuration
@@ -339,14 +339,12 @@ The SDK returns a `ServerResponse` object with the following structure:
 ```swift
 public struct ServerResponse: Codable {
     public let status: Int
-    public let message: String?
-    public let data: [String: String]?
+    public let error: [String]?
 }
 ```
 
 - `status`: 1 for success, 0 for accepted but not processed, negative values for errors
-- `message`: Optional message from the server
-- `data`: Optional additional data from the server
+- `error`: Optional list of error messages from the server
 
 ## Thread Safety
 
